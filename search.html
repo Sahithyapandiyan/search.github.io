@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Upload and Search</title>
+    <style>
+        #results {
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload Excel and Search</h1>
+    <input type="file" id="upload" accept=".xlsx, .xls">
+    <input type="text" id="search" placeholder="Search for name or data">
+    <div id="results"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script>
+        document.getElementById('upload').addEventListener('change', handleFile, false);
+        document.getElementById('search').addEventListener('input', handleSearch, false);
+
+        let excelData = [];
+
+        function handleFile(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                console.log(excelData);  // For debugging
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handleSearch(event) {
+            const query = event.target.value.toLowerCase();
+            const results = excelData.filter(row => row.some(cell => cell && cell.toString().toLowerCase().includes(query)));
+            displayResults(results);
+        }
+
+        function displayResults(results) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<p>No results found</p>';
+                return;
+            }
+            const table = document.createElement('table');
+            results.forEach(row => {
+                const tr = document.createElement('tr');
+                row.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+            });
+            resultsDiv.appendChild(table);
+        }
+    </script>
+</body>
+</html>
